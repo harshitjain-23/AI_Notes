@@ -3502,4 +3502,1602 @@ The actual outcome depends on decisions made now regarding development, deployme
 - *Advantages/limitations*
 - *Real-world case studies*
 
-**Would you like me to continue with the remaining Section C solutions (Questions 6-25 for all units)? I can provide them in a separate document or continue expanding this one.**
+
+# Artificial Intelligence & Neural Networks - SECTION C (10 MARKS) Solutions
+## Semester V | BCA
+
+> This file continues from `AI_Neural_Networks_Solutions.md` and completes **SECTION C (10-mark)** questions for all units, written to scoring depth.
+
+---
+
+## SECTION C: LONG ANSWERS (10 MARKS EACH)
+
+---
+
+# UNIT–2: PROBLEM SOLVING & LOGIC
+
+---
+
+## 6. Explain State Space Search and Control Strategies with Examples (10 marks)
+
+### 1. State Space Representation (3 marks)
+
+A **state space** is the formal model of a problem in AI. It consists of:
+
+- **States (S):** All possible configurations the system can be in
+- **Initial state (s₀):** Where the search begins
+- **Goal states (G ⊆ S):** States that satisfy the problem objective
+- **Operators / Actions (A):** Transform one state into another
+- **Transition model:** Describes the effect of actions
+- **Path cost function (g):** Cost of a sequence of actions
+
+**Example – 8-puzzle:**
+- States: All possible tile–blank configurations
+- Initial state: Given scrambled board
+- Goal state: 1–8 in order with blank at bottom-right
+- Operators: Move blank up/down/left/right if within bounds
+- Path cost: Each move costs 1
+
+**Search problem:** Find a sequence of operators that transforms initial state into a goal state with minimum cost.
+
+---
+
+### 2. Control Strategies: Definition & Dimensions (2 marks)
+
+A **control strategy** specifies **which node to expand next** in the search tree.
+
+Key dimensions:
+- **Completeness:** Will it always find a solution if one exists?
+- **Optimality:** Does it guarantee the least-cost solution?
+- **Time complexity:** O(b^d) where b = branching factor, d = depth of solution
+- **Space complexity:** Memory required to store frontier and explored nodes
+
+Control strategy = **node selection rule** + **data structure** (queue/stack/priority queue).
+
+---
+
+### 3. Uninformed Control Strategies (3 marks)
+
+These strategies **do not use heuristic information** (no domain knowledge).
+
+#### (a) Breadth-First Search (BFS)
+- Data structure: **FIFO queue**
+- Node expansion: Level by level from root
+
+**Properties:**
+- Complete: Yes, if b is finite
+- Optimal: Yes, if all step costs are equal
+- Time: O(b^{d+1})
+- Space: O(b^{d+1}) (can be huge)
+
+**Example:** In the 8-puzzle, BFS will find the minimum number of moves solution, but memory is a big issue.
+
+---
+
+#### (b) Depth-First Search (DFS)
+- Data structure: **Stack** (explicit or recursion)
+- Node expansion: Deepest node first
+
+**Properties:**
+- Complete: No, for infinite depth spaces or in presence of cycles
+- Optimal: No
+- Time: O(b^m) where m = maximum depth
+- Space: O(bm) (very memory efficient)
+
+**Example:** In a maze, DFS may go down a lengthy wrong path and backtrack later.
+
+---
+
+#### (c) Depth-Limited Search (DLS)
+- DFS with a **fixed depth limit L**
+- Ignores nodes deeper than L
+
+**Pros:**
+- Avoids infinite descent
+- Still low memory
+
+**Cons:**
+- Incomplete if solution depth > L
+- Not optimal
+
+---
+
+#### (d) Iterative Deepening Search (IDS)
+Combines advantages of BFS and DFS.
+
+Algorithm:
+1. For depth = 0 to ∞:
+   - Run depth-limited DFS with limit = depth
+
+**Properties:**
+- Complete: Yes
+- Optimal: Yes (uniform cost)
+- Time: O(b^d)
+- Space: O(bd)
+
+**Example:** Used in game search (e.g., chess) where depth limit is gradually increased.
+
+---
+
+### 4. Informed Control Strategies (2 marks)
+
+Use **heuristic function h(n)** to guide search.
+
+#### (a) Greedy Best-First Search
+- Selects node with **lowest h(n)**
+- Intuition: Expand node that appears closest to goal
+
+Pros:
+- Very fast in practice
+
+Cons:
+- Not complete (with some heuristics)
+- Not optimal
+
+#### (b) A* Search
+- Evaluation function: f(n) = g(n) + h(n)
+  - g(n) = cost so far
+  - h(n) = estimated cost to goal
+
+If **h(n) is admissible** (never overestimates), A* is:
+- Complete
+- Optimal
+
+**Example – Route Finding:**
+- g(n): Distance traveled so far
+- h(n): Straight-line distance to destination
+
+---
+
+### 5. Comparative Summary (0.5–1 mark)
+
+| Strategy | Uses Heuristic? | Complete | Optimal | Time | Space |
+|----------|-----------------|----------|---------|------|-------|
+| BFS | No | Yes | Yes* | O(b^{d+1}) | O(b^{d+1}) |
+| DFS | No | No | No | O(b^m) | O(bm) |
+| DLS | No | No (if L<d) | No | O(b^L) | O(bL) |
+| IDS | No | Yes | Yes* | O(b^d) | O(bd) |
+| Greedy | Yes | No | No | Good in practice | Depends |
+| A* | Yes | Yes | Yes (admissible h) | Exponential | Exponential |
+
+(*For uniform step cost)
+
+**Exam tip:** Draw a small search tree and show how BFS vs DFS vs Best-First expand nodes differently.
+
+---
+
+## 7. Explain Heuristic Search Techniques in Detail (10 marks)
+
+### 1. What Is a Heuristic? (2 marks)
+
+A **heuristic** is a function:
+
+h(n) ≈ estimated cost from node n to nearest goal
+
+Properties:
+- **Domain specific** (uses problem knowledge)
+- Guides search towards promising nodes
+- May sacrifice optimality for speed
+
+**Examples:**
+- 8-puzzle: h₁ = # of misplaced tiles, h₂ = sum of Manhattan distances
+- Route planning: Straight-line distance to destination
+
+Good heuristics:
+- Correlate with true distance to goal
+- Are cheap to compute relative to full search
+
+---
+
+### 2. Heuristic Search Algorithms (6–7 marks)
+
+#### (a) Greedy Best-First Search
+
+- Evaluation: f(n) = h(n)
+- Always expands node which appears **closest to goal** by heuristic
+
+**Algorithm sketch:**
+```text
+OPEN = priority queue ordered by h
+CLOSED = {}
+Push(start)
+while OPEN not empty:
+    n = node with smallest h in OPEN
+    if n is goal: return path
+    move n from OPEN to CLOSED
+    for each successor s of n:
+        if s not in OPEN or CLOSED:
+            compute h(s); insert in OPEN
+```
+
+**Pros:**
+- Very fast in many practical cases
+- Memory usage lower than A*
+
+**Cons:**
+- Can get stuck in local minima
+- Not optimal and not necessarily complete
+
+---
+
+#### (b) A* Search (Most important)  
+
+**Evaluation function:**
+
+f(n) = g(n) + h(n)
+
+- g(n) = exact cost so far
+- h(n) = heuristic estimate from n to goal
+
+**Admissible heuristic:**
+
+h(n) ≤ h*(n) for all nodes n  
+(h* = true minimum cost to goal)
+
+If h(n) is admissible, A* is:
+- Complete
+- Optimal (returns least-cost path)
+
+**Consistent (monotonic) heuristic:**
+
+h(n) ≤ c(n, n′) + h(n′) for every edge n→n′
+
+Ensures f(n) along a path is non-decreasing → simpler implementation (no need to reopen nodes).
+
+**Example – 8-puzzle heuristics:**
+- h₁ = number of misplaced tiles → admissible
+- h₂ = total Manhattan distance → admissible and more informed
+
+**Effect:**  
+Using h₂ results in exploring far fewer nodes than h₁.
+
+---
+
+#### (c) Iterative Deepening A* (IDA*)
+
+- Memory-efficient version of A*
+- Uses **f-cost threshold** instead of open list
+- Repeated depth-first searches with increasing f-limit
+
+Steps:
+1. Start with threshold = h(start)
+2. Run DFS but prune nodes where f(n) > threshold
+3. If goal not found, set threshold to minimum f(n) that exceeded previous threshold
+4. Repeat until solution found
+
+**Advantages:**
+- Much less memory than A*
+- Retains optimality with admissible heuristic
+
+**Used in:** Very large state spaces, puzzle solving (e.g., 15-puzzle).
+
+---
+
+#### (d) Hill Climbing (as a heuristic local search)
+
+- Uses heuristic to move **uphill** toward higher-valued states
+- At each step: move to neighbor with best h(n)
+
+**Variants:**
+- Simple hill climbing
+- Steepest-ascent hill climbing
+- Stochastic hill climbing
+
+**Problems:**
+- Local maxima
+- Plateaus
+- Ridges
+
+**Fixes:**
+- Random restart
+- Simulated annealing
+
+---
+
+#### (e) Simulated Annealing (brief)
+
+- Stochastic local search inspired by physics
+- Occasionally allows moves to worse states with probability depending on **temperature T**
+
+Acceptance probability:
+
+P(accept worse move) = exp(−ΔE / T)
+
+- High T: More exploration
+- Low T: More exploitation
+
+**Advantage:**
+- Can escape local minima, good for large combinatorial optimization
+
+---
+
+### 3. Heuristic Quality and Design (1 mark)
+
+**Dominance:**  
+Heuristic h₂ dominates h₁ if:
+
+∀n: h₂(n) ≥ h₁(n), and both admissible
+
+Then A* with h₂ expands no more nodes than with h₁.
+
+**Design methods:**
+- Relaxed problems (remove constraints to get easy heuristic)
+- Pattern databases (precompute exact costs for subproblems)
+
+**Example – 8-puzzle:**
+- Relaxed rule: "Tile can move anywhere" → h(n) = #misplaced
+- Relaxed rule: "Tile can move to any square in one step" → Manhattan distance
+
+---
+
+## 8. Explain A* Search Algorithm with Example and Properties (10 marks)
+
+### 1. Definition & Evaluation Function (2 marks)
+
+A* is an **informed search algorithm** that uses:
+
+f(n) = g(n) + h(n)
+
+- g(n): Cost from start to node n
+- h(n): Heuristic estimate from n to goal
+
+Node with **smallest f(n)** is expanded first.
+
+---
+
+### 2. A* Algorithm (Pseudocode) (2–3 marks)
+
+```text
+function A*(start, goal):
+    OPEN = priority queue ordered by f
+    CLOSED = {}
+
+    g(start) = 0
+    f(start) = g(start) + h(start)
+    INSERT start into OPEN
+
+    while OPEN not empty:
+        n = node in OPEN with smallest f
+        if n is goal:
+            return reconstruct_path(n)
+
+        REMOVE n from OPEN
+        ADD n to CLOSED
+
+        for each successor s of n:
+            tentative_g = g(n) + cost(n, s)
+
+            if s in CLOSED and tentative_g ≥ g(s):
+                continue
+
+            if s not in OPEN or tentative_g < g(s):
+                parent(s) = n
+                g(s) = tentative_g
+                f(s) = g(s) + h(s)
+                if s not in OPEN:
+                    INSERT s into OPEN
+
+    return failure
+```
+
+**Key idea:** If a cheaper path to s is found, update its g and f values.
+
+---
+
+### 3. Example – Route Finding (3 marks)
+
+Consider cities and roads (Romania map style example).
+
+Goal: Find shortest path from Arad to Bucharest.
+
+Heuristic h(n): Straight-line distance from city n to Bucharest.
+
+At each iteration:
+1. Choose city with lowest f = g + h
+2. Expand and update successors
+3. Continue until Bucharest is chosen for expansion
+
+**Why it works:**  
+Heuristic is **admissible** because straight-line distance ≤ actual road distance.
+
+You can sketch a small graph with 4–5 nodes and show A* exploring fewer paths than BFS.
+
+---
+
+### 4. Properties of A* (3 marks)
+
+**(a) Completeness**
+- If branching factor b is finite and all step costs ≥ ε > 0
+- And heuristic h(n) is admissible
+- Then A* is **complete** (will find a solution if one exists)
+
+**(b) Optimality**
+- With admissible h(n), A* always finds a **least-cost path**
+- Intuition: A* never expands a suboptimal goal node before all cheaper paths are explored
+
+More strongly, if h is **consistent (monotone)**:
+
+h(n) ≤ c(n, n′) + h(n′)
+
+Then:
+- f(n) values are non-decreasing along any path
+- Once a node is expanded, the cheapest path to it has been found
+- Implementation: No need to reopen closed nodes → efficiency gain
+
+**(c) Time and Space Complexity**
+
+- Worst-case time: Exponential, O(b^d)
+- Worst-case space: Exponential, needs to keep all nodes in memory (OPEN + CLOSED)
+
+**Practical Performance:**
+- Very good with strong heuristics
+- Can be intractable with weak heuristics or huge state spaces
+
+---
+
+### 5. Limitations and Improvements (1 mark)
+
+**Limitations:**
+- High memory usage
+- Heuristic design is non-trivial
+- Poor performance if heuristic is too weak (close to 0)
+
+**Improvements:**
+- IDA* (iterative deepening A*) for memory
+- Memory-bounded A* variants (SMA*)
+- Better heuristic design (pattern databases, relaxed problems)
+
+---
+
+## 9. Explain Minimax Algorithm with Alpha–Beta Pruning and Example (10 marks)
+
+### 1. Minimax for Two-Player Games (3 marks)
+
+Applicable to **two-player**, **zero-sum**, **perfect-information** games:
+- Players: MAX and MIN
+- MAX: Tries to maximize utility
+- MIN: Tries to minimize utility (opponent)
+
+**Game tree:**
+- Nodes: Game states
+- Edges: Moves
+- MAX and MIN levels alternate
+
+At terminal nodes, there is a **utility value** representing game outcome (e.g., +1 win, 0 draw, −1 loss).
+
+**Minimax Value Definition:**
+
+- For terminal node s:  
+  minimax(s) = utility(s)
+
+- For MAX node s:  
+  minimax(s) = max_{children c of s} minimax(c)
+
+- For MIN node s:  
+  minimax(s) = min_{children c of s} minimax(c)
+
+**Result:** At root: choose move leading to child with highest minimax value.
+
+---
+
+### 2. Minimax Algorithm (Pseudocode) (2 marks)
+
+```text
+function minimax(node, depth, maximizingPlayer):
+    if depth == 0 or node is terminal:
+        return evaluate(node)
+
+    if maximizingPlayer:
+        best = -∞
+        for each child of node:
+            val = minimax(child, depth - 1, false)
+            best = max(best, val)
+        return best
+    else:
+        best = +∞
+        for each child of node:
+            val = minimax(child, depth - 1, true)
+            best = min(best, val)
+        return best
+```
+
+**Complexity:**
+- Time: O(b^d)  (b = branching factor, d = depth)
+- Space: O(bd) (for DFS implementation)
+
+---
+
+### 3. Alpha–Beta Pruning (3 marks)
+
+**Goal:** Reduce number of nodes evaluated by pruning branches that **cannot influence** the final decision.
+
+Maintain two values:
+- **α (alpha):** Best value that MAX can guarantee so far on the path
+- **β (beta):** Best value that MIN can guarantee so far on the path
+
+**Pruning Condition:**
+- If α ≥ β at any point → prune remaining children (no need to explore)
+
+**Alpha–Beta Algorithm:**
+
+```text
+function alphabeta(node, depth, α, β, maximizingPlayer):
+    if depth == 0 or node is terminal:
+        return evaluate(node)
+
+    if maximizingPlayer:
+        value = -∞
+        for each child of node:
+            value = max(value, alphabeta(child, depth-1, α, β, false))
+            α = max(α, value)
+            if α ≥ β:
+                break   # β cut-off (prune)
+        return value
+    else:
+        value = +∞
+        for each child of node:
+            value = min(value, alphabeta(child, depth-1, α, β, true))
+            β = min(β, value)
+            if α ≥ β:
+                break   # α cut-off (prune)
+        return value
+```
+
+**Effect:** With good move ordering, effective branching factor ≈ √b.  
+Can search twice as deep as plain minimax in same time.
+
+---
+
+### 4. Simple Example (2 marks)
+
+Draw a small game tree:
+
+- Root: MAX
+- Two children: A, B (MIN nodes)
+- Each with 2–3 leaf nodes with given utility values
+
+Walk through:
+1. Plain minimax: Evaluate all leaves
+2. Alpha–beta: Show where β cut-offs or α cut-offs happen and which leaves are skipped
+
+Explain how pruning **does not change final result** but saves computation.
+
+---
+
+## 10. Explain Constraint Satisfaction Problem (CSP) and Formulation as a Search Problem (10 marks)
+
+### 1. CSP Definition (3 marks)
+
+A **Constraint Satisfaction Problem** is defined by:
+
+1. **Variables:** X₁, X₂, …, Xₙ
+2. **Domains:** D₁, D₂, …, Dₙ (finite set of values for each variable)
+3. **Constraints:** C₁, C₂, …, Cₖ  
+   Each constraint Ci limits allowed combinations of values for a subset of variables.
+
+**Goal:** Assign a value to every variable such that **all constraints are satisfied**.
+
+---
+
+### 2. Examples of CSPs (2 marks)
+
+**(a) Graph Coloring**
+- Variables: Regions (R₁, R₂, …)
+- Domain: {Red, Green, Blue}
+- Constraints: Adjacent regions must not have the same color
+
+**(b) Map Coloring (Australia):**
+- WA, NT, SA, Q, NSW, V, T
+- Domain: {Red, Green, Blue}
+- Constraint: Neighbors ≠ same color
+
+**(c) N-Queens:**
+- Variables: Q₁..Qₙ (position of queen in each column)
+- Domain: Row numbers 1..n
+- Constraints: No queens share row or diagonal
+
+**(d) Scheduling:**
+- Variables: Courses/meetings
+- Domain: Time slots and rooms
+- Constraints: No clashes, capacity limits, teacher availability
+
+---
+
+### 3. CSP as a Search Problem (3 marks)
+
+Treat each **partial assignment** as a state:
+
+- Initial state: Empty assignment {}
+- Successor: Assign a value to one unassigned variable (consistent with current assignment)
+- Goal state: Assignment where all variables assigned and all constraints satisfied
+
+**Search tree:**
+- Depth: n (number of variables)
+- Branching factor: average domain size
+
+**Naïve search:**
+- Try all |D₁| × |D₂| × … × |Dₙ| combinations → exponential
+
+To solve efficiently, AI uses:
+- **Backtracking search** (depth-first through assignments)
+- **Variable ordering heuristics** (MRV – Minimum Remaining Values, Degree heuristic)
+- **Value ordering heuristics** (LCV – Least Constraining Value)
+- **Inference** (forward checking, arc consistency)
+
+---
+
+### 4. Backtracking Search (1–2 marks)
+
+**Basic algorithm:**
+
+```text
+function backtrack(assignment):
+    if assignment is complete:
+        return assignment
+    X = select_unassigned_variable(assignment)
+    for each value v in domain(X):
+        if v is consistent with assignment:
+            add (X=v) to assignment
+            result = backtrack(assignment)
+            if result ≠ failure:
+                return result
+            remove (X=v) from assignment
+    return failure
+```
+
+**Key idea:** Depth-first search with **constraint checking at each step**.
+
+---
+
+### 5. CSP vs Standard Search (1 mark)
+
+Differences from ordinary state-space search:
+
+- States are **partial assignments**, not arbitrary nodes
+- Actions: Assign variable values
+- CSP solvers use **constraints to prune** huge parts of search space early
+- Often much more efficient than general search
+
+**Conclusion:** CSP formulation allows generic, powerful algorithms with strong pruning and heuristics.
+
+---
+
+## 11. Explain Hill Climbing Search with Problems and Solutions (10 marks)
+
+### 1. Hill Climbing Basics (3 marks)
+
+**Hill climbing** is a **local search** algorithm that iteratively moves to a neighboring state with better heuristic value.
+
+- Objective (for maximization): find state with highest h(s)
+- At each step: consider neighbors and move to the best
+
+**Algorithm (steepest-ascent):**
+
+```text
+current = initial_state
+loop:
+    neighbor = best successor of current
+    if h(neighbor) ≤ h(current):
+        return current   # local maximum
+    current = neighbor
+```
+
+**Advantages:**
+- Uses constant memory
+- Simple and fast
+- Good for problems with many parameters
+
+---
+
+### 2. Problems with Hill Climbing (4 marks)
+
+#### (a) Local Maxima
+
+A state that is better than all neighbors but not the global best.
+
+- Algorithm stops there
+- Misses global optimum
+
+**Example:**
+- Objective function shaped like multiple peaks
+- Starting near a small peak → stuck there
+
+#### (b) Plateaus
+
+Flat region where all neighbors have same value.
+
+- No direction information
+- Random walk required to escape
+
+#### (c) Ridges
+
+Path of steepest ascent does not lead directly up the slope.
+
+- Need to move sometimes “sideways” to climb
+- Standard hill climbing may fail
+
+#### (d) Determinism and Getting Stuck
+
+- Pure greedy strategy → easy to get stuck in suboptimal solutions.
+
+---
+
+### 3. Solutions / Variants (3 marks)
+
+#### (a) Random Restart Hill Climbing
+
+- Perform hill climbing from many different initial states
+- Keep best solution found
+- If number of restarts large, probability of finding global optimum increases
+
+**Use case:** Large search spaces with many local optima.
+
+#### (b) Stochastic Hill Climbing
+
+- Do not always pick best successor
+- Choose successor with probability proportional to improvement
+- Helps escape some local maxima
+
+#### (c) First-Choice Hill Climbing
+
+- Generate successors randomly until a better one is found
+- Move immediately to first better neighbor
+- Useful when there are many successors
+
+#### (d) Simulated Annealing (link)
+
+- Occasionally accept worse states based on temperature
+- Good theoretical guarantees of reaching global optimum with appropriate schedule
+
+#### (e) Tabu Search (brief)
+
+- Keep list of recently visited states (tabu list)
+- Forbid returning to them
+- Prevents cycling and repeated local traps
+
+---
+
+# 12. Explain Propositional and Predicate Logic with Examples (10 marks)
+
+### 1. Propositional Logic (4 marks)
+
+**Syntax:**
+- Atomic propositions: P, Q, R,… (each is true or false)
+- Connectives: ¬ (NOT), ∧ (AND), ∨ (OR), → (IMPLIES), ↔ (IFF)
+- Parentheses for grouping
+
+**Semantics:**
+- **Interpretation:** assignment of T/F to each atomic proposition
+- **Formula truth:** computed from atomic values using truth tables
+
+**Example:**
+- P: "It is raining"
+- Q: "I carry an umbrella"
+- Sentence: P → Q (If it is raining, then I carry an umbrella)
+
+**Truth Table:**
+
+| P | Q | P → Q |
+|---|---|--------|
+| T | T | T |
+| T | F | F |
+| F | T | T |
+| F | F | T |
+
+**Inference Rules:**
+- Modus Ponens: If P and P → Q then Q
+- Modus Tollens: If ¬Q and P → Q then ¬P
+- Resolution (for CNF)
+
+**Limitation:** Cannot express relations or quantification over objects.
+
+---
+
+### 2. Predicate Logic (First-Order Logic) (4 marks)
+
+Extends propositional logic with:
+- **Predicates:** P(x), Likes(x, y), Greater(x, y)
+- **Constants:** a, b, John, 0
+- **Variables:** x, y, z
+- **Functions:** f(x), fatherOf(x)
+- **Quantifiers:**
+  - ∀x  (for all x)
+  - ∃x  (there exists an x)
+
+**Example knowledge base:**
+- Human(Socrates)
+- ∀x (Human(x) → Mortal(x))
+
+From this, can infer: Mortal(Socrates)
+
+**Translation example:**
+- "All humans are mortal": ∀x (Human(x) → Mortal(x))
+- "Some students are hardworking": ∃x (Student(x) ∧ Hardworking(x))
+
+**Semantics:**
+- An **interpretation** includes a domain of discourse and meanings for predicates, functions, and constants.
+
+**Inference:**
+- Uses unification, resolution, generalization of propositional inference.
+
+**Power:**
+- Can represent and reason about structured objects and relationships.
+
+---
+
+### 3. Comparison and Use in AI (2 marks)
+
+| Aspect | Propositional Logic | Predicate Logic |
+|--------|---------------------|-----------------|
+| Basic unit | Propositions | Predicates with arguments |
+| Quantifiers | No | Yes (∀, ∃) |
+| Expressiveness | Limited | Much richer |
+| Complexity | Decidable (SAT NP-complete) | Semi-decidable (general validity undecidable) |
+| Use | Simple rule-based systems | Knowledge representation in AI |
+
+Predicate logic is the **standard** for representing complex knowledge in AI systems.
+
+---
+
+# 13. Explain Resolution in Propositional and Predicate Logic with Examples (10 marks)
+
+### 1. Resolution in Propositional Logic (4 marks)
+
+**Goal:** Prove that a query logically follows from knowledge base (KB) using proof by contradiction.
+
+**Resolution rule:**
+
+From clauses (A ∨ B) and (¬B ∨ C) infer (A ∨ C).
+
+**Steps for theorem proving:**
+1. Convert KB to **conjunctive normal form (CNF)**
+2. Add **negation of query** to KB
+3. Apply resolution repeatedly
+4. If derive empty clause (⊥), KB ⊨ query
+
+**Example:**
+Given:
+1. P → Q  (¬P ∨ Q)
+2. Q → R  (¬Q ∨ R)
+3. P
+
+Prove: R
+
+CNF:
+- Clause1: (¬P ∨ Q)
+- Clause2: (¬Q ∨ R)
+- Clause3: (P)
+- Add ¬R to refute: (¬R)
+
+Resolution steps:
+- From (¬Q ∨ R) and (¬R) → (¬Q)
+- From (¬P ∨ Q) and (¬Q) → (¬P)
+- From (P) and (¬P) → empty clause (⊥)
+
+Thus, KB ⊨ R.
+
+---
+
+### 2. Clause Form Conversion (2 marks)
+
+To apply resolution, sentences must be in **CNF**:
+
+1. Eliminate ↔ and →
+2. Move ¬ inward using De Morgan laws
+3. Standardize variables (rename to avoid collision)
+4. Skolemization (remove ∃ by introducing functions/constants)
+5. Drop universal quantifiers
+6. Distribute ∨ over ∧ to get conjunction of disjunctions
+
+Each disjunction of literals is a **clause**.
+
+---
+
+### 3. Resolution in Predicate Logic (4 marks)
+
+Similar to propositional resolution but combines with **unification**.
+
+**Unification:**
+- Process of finding a substitution θ that makes two literals identical
+- Example:  
+  Likes(John, X) and Likes(J, IceCream) unify with θ = {J/John, X/IceCream}
+
+**Predicate resolution rule:**
+
+From clauses:
+- C₁: (A ∨ L)
+- C₂: (B ∨ ¬L′)
+
+where L and L′ are **unifiable** with substitution θ,
+
+Infer: (A ∨ B)θ
+
+**Example:**
+
+KB:
+1. ∀x (Man(x) → Mortal(x))
+2. Man(Socrates)
+
+Prove: Mortal(Socrates)
+
+Steps:
+1. Convert to CNF:
+   - (¬Man(x) ∨ Mortal(x))
+   - Man(Socrates)
+2. Add negation of query: ¬Mortal(Socrates)
+3. Clauses:
+   - C1: (¬Man(x) ∨ Mortal(x))
+   - C2: Man(Socrates)
+   - C3: ¬Mortal(Socrates)
+4. Unify Mortal(x) with Mortal(Socrates): θ = {x/Socrates}
+5. From C1 and C3:
+   - (¬Man(x) ∨ Mortal(x)) and (¬Mortal(Socrates))
+   - Resolve → (¬Man(Socrates))
+6. From (¬Man(Socrates)) and Man(Socrates) → empty clause ⊥
+
+Thus, KB ⊨ Mortal(Socrates).
+
+**Importance in AI:**  
+Resolution is the basis of **logic programming** (e.g., Prolog) and automated theorem proving.
+
+---
+
+# UNIT–3: CONVOLUTIONAL NEURAL NETWORKS (CNN)
+
+---
+
+## 14. Explain CNN Architecture and Working with Diagram (10 marks)
+
+### 1. Overall CNN Pipeline (3 marks)
+
+Typical CNN for image classification:
+
+Input (image) → Convolution → Non-linearity (ReLU) → Pooling → 
+[repeat Conv+ReLU+Pool] → Flatten → Fully Connected Layers → Output (Softmax)
+
+Each part has a specific role:
+
+- Convolution layers: **Feature extraction**
+- Pooling: **Downsampling** and invariance
+- FC layers: **Classification**
+
+In exam, draw a block diagram: image → conv layer(s) → pooling → FC → output.
+
+---
+
+### 2. Convolution Operation (3 marks)
+
+**Concept:** Apply a small learnable filter (kernel) across the image to detect local patterns.
+
+Mathematically, for a 2D convolution:
+
+Output(i, j) = Σₘ Σₙ Input(i + m, j + n) × Kernel(m, n)
+
+**Hyperparameters:**
+- Filter size (e.g., 3×3, 5×5)
+- Stride (e.g., 1, 2)
+- Padding (valid vs same)
+- Number of filters (defines number of feature maps)
+
+**Interpretation:**
+- Each filter detects specific pattern (edge, corner, texture)
+- Deeper layers detect higher-level features (eyes, wheels, etc.)
+
+---
+
+### 3. Pooling Layers (2 marks)
+
+**Purpose:** Reduce spatial dimensions while keeping important information.
+
+**Max pooling:**
+- Window (e.g., 2×2) with stride 2
+- Output = maximum value in window
+
+**Effects:**
+- Reduces parameters and computation
+- Provides translational invariance
+- Prevents overfitting
+
+**Average pooling:**
+- Average of values in window
+- Smoother but less common in modern CNNs (except Global Average Pooling)
+
+---
+
+### 4. Fully Connected Layers and Output (1–2 marks)
+
+At the end of convolution + pooling stages:
+- Feature maps are flattened into 1D vector
+- Passed through one or more **fully connected** (dense) layers
+
+Final layer:
+- Uses **Softmax** activation for multi-class classification
+- Output is probability distribution over classes
+
+Softmax for class i:
+
+P(y = i | x) = exp(zᵢ) / Σⱼ exp(zⱼ)
+
+Where zᵢ are logits from previous layer.
+
+---
+
+### 5. Training Process (1 mark)
+
+1. **Forward pass:** Compute output probabilities from input
+2. **Loss computation:** Cross-entropy loss between predicted and true labels
+3. **Backward pass (backpropagation):** Compute gradients of loss w.r.t. weights
+4. **Optimizer (e.g., SGD/Adam):** Update weights in opposite direction of gradient
+5. Repeat over many epochs until convergence.
+
+---
+
+## 15. Explain Image Classification Using CNN with Training Process (10 marks)
+
+### 1. Problem Setup (2 marks)
+
+Given labeled dataset:
+- Images xᵢ
+- Labels yᵢ (e.g., digits 0–9)
+
+Goal: Learn function fθ(x) that maps an image x to a label y.
+
+---
+
+### 2. Model Architecture (2 marks)
+
+Typical small CNN for MNIST:
+
+- Input: 28×28×1
+- Conv1: 32 filters, 3×3 → ReLU
+- MaxPool1: 2×2
+- Conv2: 64 filters, 3×3 → ReLU
+- MaxPool2: 2×2
+- Flatten
+- FC1: 128 units → ReLU
+- FC2: 10 units → Softmax
+
+---
+
+### 3. Training Pipeline (4–5 marks)
+
+**Step 1: Data Preparation**
+- Normalize pixel values (e.g., divide by 255)
+- Optionally perform data augmentation (random rotation, flipping, cropping)
+- Split into train/validation/test
+
+**Step 2: Forward Pass**
+- Input mini-batch of images (e.g., 64)
+- Pass through all layers (Conv → ReLU → Pool → FC → Softmax)
+- Get predicted probability distribution for each image
+
+**Step 3: Loss Function**
+
+Use cross-entropy loss:
+
+L = − Σᵢ Σ_c yᵢ(c) log(pᵢ(c))
+
+Where yᵢ is one-hot ground truth and pᵢ is predicted probability vector.
+
+**Step 4: Backpropagation**
+- Compute gradients ∂L/∂θ via chain rule
+- Gradients flow through FC → pooling → convolution layers
+
+**Step 5: Optimization**
+- Update parameters using gradient descent:
+
+θ ← θ − α ∂L/∂θ
+
+or Adam optimizer (adaptive learning rates).
+
+**Step 6: Epochs and Convergence**
+- One epoch = one full pass over training data
+- Repeat for many epochs (e.g., 10–50)
+- Monitor validation accuracy/loss to avoid overfitting
+
+---
+
+### 4. Evaluation and Inference (1–2 marks)
+
+After training:
+- Evaluate on test set (unseen images)
+- Compute accuracy, confusion matrix
+- For a new image, run only forward pass, take argmax of probabilities as predicted class.
+
+---
+
+## 16. Explain Hyperparameter Tuning in CNN in Detail (10 marks)
+
+### 1. What Are Hyperparameters? (1–2 marks)
+
+Hyperparameters are configuration settings **chosen before training** that control model structure and learning dynamics, e.g.:
+- Learning rate
+- Batch size
+- Number of layers, filters
+- Kernel size
+- Regularization parameters
+
+They are **not learned** from data; they are set by the practitioner.
+
+---
+
+### 2. Key Hyperparameters in CNNs (4–5 marks)
+
+#### (a) Architecture Hyperparameters
+
+- **Number of convolutional layers:**
+  - Few layers: easier to train but lower capacity
+  - Deep networks (e.g., ResNet-50) capture complex features
+
+- **Number of filters per layer:**
+  - More filters = more features, but increased computation & overfitting risk
+  - Common pattern: increase filters in deeper layers (32 → 64 → 128 → 256)
+
+- **Kernel size:**
+  - 3×3 standard for most modern CNNs (VGG, ResNet)
+  - Larger kernels (5×5, 7×7) capture broader context but more parameters
+
+- **Pooling size and type:**
+  - 2×2 max pool is typical
+  - Affects spatial resolution of feature maps
+
+- **Number and size of fully connected layers:**
+  - More units capture richer combinations of features
+  - But large FC layers dominate parameter count and overfitting risk
+
+---
+
+#### (b) Training Hyperparameters
+
+- **Learning rate (α):**
+  - Most important hyperparameter
+  - Too high → divergence or unstable training
+  - Too low → extremely slow convergence
+  - Often schedules/decay: step decay, exponential decay, cosine annealing.
+
+- **Batch size:**
+  - Small batch (32, 64): noisier gradient, better generalization
+  - Large batch (256+): faster on GPU but may generalize worse
+
+- **Number of epochs:**
+  - Too few → underfitting
+  - Too many → overfitting
+  - Use validation curve and early stopping
+
+- **Optimizer:**
+  - SGD with momentum
+  - Adam (adaptive momentum, popular default)
+  - RMSprop, Nadam, etc.
+
+- **Regularization parameters:**
+  - Dropout rate (e.g., 0.5)
+  - L2 weight decay (e.g., 1e−4)
+  - Data augmentation intensity
+
+---
+
+### 3. Hyperparameter Tuning Strategies (3 marks)
+
+#### (a) Manual (Grid / Random Search)
+
+- **Grid search:** Try combinations from predefined grid (e.g., α ∈ {0.1, 0.01, 0.001}, batch ∈ {32, 64})
+- **Random search:** Randomly sample hyperparameters within ranges
+
+Random search often more efficient than grid for high-dimensional spaces.
+
+#### (b) Bayesian Optimization (brief)
+
+- Treat validation accuracy as unknown function of hyperparameters
+- Build surrogate model (e.g., Gaussian Process)
+- Choose new hyperparameters based on expected improvement
+
+#### (c) Successive Halving / Hyperband
+
+- Allocate small resources to many hyperparameter configs
+- Gradually keep best performers and discard bad ones
+
+---
+
+### 4. Practical Tuning Procedure (1 mark)
+
+1. Start with baseline CNN architecture (e.g., from paper)
+2. Tune **learning rate** using learning rate finder
+3. Tune **batch size** and regularization
+4. Adjust architectural hyperparameters (number of layers/filters)
+5. Use validation set to compare configurations
+6. Fix best set based on validation performance and stability
+
+---
+
+## 17. Explain AlexNet Architecture, Innovations, and Applications (10 marks)
+
+### 1. Background (1 mark)
+
+- Proposed by **Alex Krizhevsky et al. (2012)**
+- Won **ImageNet 2012** competition by huge margin
+- Marked the beginning of deep learning dominance in computer vision
+
+---
+
+### 2. Architecture (4 marks)
+
+Input: 227×227×3 RGB image (original paper: 224×224, with some preprocessing differences)
+
+Layers:
+1. **Conv1:**
+   - 96 filters, size 11×11, stride 4
+   - Output: large feature maps
+   - ReLU activation
+   - Followed by overlapping max pooling & Local Response Normalization (LRN)
+
+2. **Conv2:**
+   - 256 filters, 5×5
+   - ReLU + max pooling + LRN
+
+3. **Conv3:**
+   - 384 filters, 3×3, stride 1
+   - ReLU
+
+4. **Conv4:**
+   - 384 filters, 3×3
+   - ReLU
+
+5. **Conv5:**
+   - 256 filters, 3×3
+   - ReLU + max pooling
+
+6. **Fully Connected Layers:**
+   - FC6: 4096 neurons + ReLU + Dropout
+   - FC7: 4096 neurons + ReLU + Dropout
+   - FC8: 1000 neurons + Softmax (for 1000 ImageNet classes)
+
+Total parameters ≈ 60 million.
+
+---
+
+### 3. Key Innovations (3 marks)
+
+1. **Use of ReLU Activation:**
+   - f(x) = max(0, x)
+   - Faster convergence than sigmoid/tanh
+   - Helped deeper networks to train
+
+2. **Dropout Regularization:**
+   - Applied to FC layers to reduce overfitting
+   - Randomly deactivate neurons during training
+
+3. **Data Augmentation:**
+   - Random cropping, horizontal flipping
+   - Brightness/contrast changes
+   - Effectively increased training data
+
+4. **GPU Training:**
+   - Used two GPUs for parallel training
+   - Enabled training of such a large model on ImageNet
+
+5. **Local Response Normalization (LRN):**
+   - Inspired by lateral inhibition in biological neurons
+   - Later replaced by batch normalization in modern networks
+
+---
+
+### 4. Applications and Impact (2 marks)
+
+**Applications:**
+- Large-scale image classification
+- Feature extractor for downstream tasks (transfer learning)
+- Basis for object detection, segmentation networks
+
+**Impact:**
+- Showed that **deep CNNs + big data + GPUs** can vastly outperform traditional methods
+- Inspired VGG, GoogLeNet, ResNet
+- Established standard practices for CNN design and training
+
+---
+
+## 18. Explain ResNet Architecture, Residual Learning, and Advantages (10 marks)
+
+### 1. Motivation (1 mark)
+
+Deep networks suffer from **degradation problem**:
+- As depth increases beyond certain point, training accuracy degrades
+- Not just overfitting; optimization becomes harder
+
+ResNet (He et al., 2015) addresses this by introducing **residual connections**.
+
+---
+
+### 2. Residual Block (3 marks)
+
+Instead of directly learning mapping H(x), ResNet learns **residual function** F(x):
+
+H(x) = F(x) + x
+
+**Basic block (for smaller networks):**
+
+x → Conv(3×3) → BN → ReLU → Conv(3×3) → BN → +x → ReLU
+
+**Bottleneck block (for deeper networks like ResNet-50):**
+
+x → Conv(1×1) → BN → ReLU → Conv(3×3) → BN → ReLU → Conv(1×1) → BN → +x → ReLU
+
+If dimensions differ, use 1×1 conv on x (projection) before addition.
+
+**Intuition:**
+- Easier to learn **residual F(x) = H(x) − x** than H(x) directly
+- If identity mapping is optimal, network can easily set F(x) ≈ 0
+
+---
+
+### 3. Overall ResNet Architecture (3 marks)
+
+Example: **ResNet-50** (50 layers deep):
+
+1. Initial conv: 7×7, 64 filters, stride 2 + MaxPool
+2. 4 stages of residual blocks:
+   - Conv2_x: 3 bottleneck blocks (64, 64, 256)
+   - Conv3_x: 4 blocks (128, 128, 512)
+   - Conv4_x: 6 blocks (256, 256, 1024)
+   - Conv5_x: 3 blocks (512, 512, 2048)
+
+3. Global Average Pooling
+4. Fully Connected Layer (1000 classes)
+
+**Key idea:** Depth 50/101/152 feasible with residual connections.
+
+---
+
+### 4. Advantages of ResNet (3 marks)
+
+1. **Very Deep Networks Trainable:**
+   - Successfully trained 152-layer network on ImageNet
+   - Deeper networks achieved lower error than shallower ones
+
+2. **Improved Accuracy:**
+   - Won ILSVRC 2015 with top-5 error ≈ 3.57%
+   - Better than VGG/GoogLeNet
+
+3. **Better Gradient Flow:**
+   - Skip connections provide direct paths for gradients
+   - Reduces vanishing gradient problem
+
+4. **Modular and Extensible:**
+   - Residual blocks reused in many architectures
+   - Foundation for ResNeXt, DenseNet (modified idea), etc.
+
+5. **Better Optimization Landscape:**
+   - Residual formulation leads to smoother loss surfaces
+   - Easier training at scale
+
+**Applications:**
+- Image classification, detection, segmentation
+- Feature extractor in many computer vision tasks
+
+---
+
+## 19. Compare AlexNet and ResNet Architectures (10 marks)
+
+### 1. Architectural Differences (4 marks)
+
+| Aspect | AlexNet | ResNet |
+|--------|---------|--------|
+| Year | 2012 | 2015 |
+| Depth | 8 layers (5 conv + 3 FC) | 18, 34, 50, 101, 152 layers |
+| Core Idea | Deep CNN with ReLU, dropout | Residual learning with skip connections |
+| Filters | Large early kernels (11×11, 5×5) | Mostly 3×3 (plus 1×1 bottlenecks) |
+| Normalization | Local Response Normalization | Batch Normalization |
+| Parameters | ~60 million | ResNet-50 ~25 million |
+
+---
+
+### 2. Performance and Training (3 marks)
+
+- **Accuracy:**
+  - AlexNet: Top-5 error ≈ 15.3% (ImageNet)
+  - ResNet: Top-5 error ≈ 3.57% (ResNet-152)
+
+- **Depth vs Performance:**
+  - AlexNet relatively shallow
+  - ResNet shows **deeper networks can perform better** with residual connections
+
+- **Optimization:**
+  - AlexNet training feasible only to limited depth
+  - ResNet training scales well with depth due to skip connections
+
+---
+
+### 3. Design Philosophy & Modern Relevance (3 marks)
+
+- AlexNet opened the door for deep learning in vision; architecture is largely **historical** now.
+- ResNet introduced a design pattern still used in **most modern architectures**.
+- ResNet’s residual connections are now standard for:
+  - Vision models
+  - Some NLP models
+  - Speech recognition systems
+
+In exams, clearly mention:  
+**AlexNet = milestone model; ResNet = breakthrough in very deep networks.**
+
+---
+
+# UNIT–4: RECURRENT NEURAL NETWORKS (RNN)
+
+---
+
+## 20. Explain Recurrent Neural Networks and Their Applications (10 marks)
+
+### 1. RNN Architecture (4 marks)
+
+At each time step t:
+
+h_t = f(Whh h_{t-1} + Wxh x_t + b_h)
+y_t = Why h_t + b_y
+
+Where:
+- x_t: input at time t
+- h_t: hidden state at time t
+- y_t: output at time t
+- Whh, Wxh, Why: weight matrices
+- f: non-linearity (tanh, ReLU)
+
+**Unrolled view:** sequence of cells with shared weights across time.
+
+RNN types:
+- One-to-one (simple NN)
+- One-to-many (image captioning)
+- Many-to-one (sentiment analysis)
+- Many-to-many (machine translation)
+
+---
+
+### 2. Applications (6 marks)
+
+Summarize core application areas (NLP, speech, time series, video, etc.) – similar to Section B Q42 but more structured and with examples:
+
+1. **Natural Language Processing:**
+   - Language modeling, next-word prediction
+   - Sentiment analysis
+   - Part-of-speech tagging
+   - Named Entity Recognition (NER)
+
+2. **Machine Translation:**
+   - Encoder–decoder RNNs translate text sequences.
+
+3. **Speech Recognition:**
+   - Input: audio features over time
+   - Output: text sequence
+
+4. **Time Series Forecasting:**
+   - Stock prices, weather, traffic
+
+5. **Video Analysis:**
+   - Action recognition over frame sequences
+
+6. **Sequence Generation:**
+   - Text generation, music generation
+
+Mention advantages (handles variable-length sequences, temporal patterns) and limitations (vanishing gradients, replaced by Transformers in many tasks).
+
+---
+
+## 21. Explain LSTM Architecture with Gates and Equations (10 marks)
+
+Focus on **derivation already covered in Section B Q36**, but here provide more detail, diagrams (conceptually), and emphasize:
+- Gates (forget, input, output)
+- Cell state vs hidden state
+- How LSTM solves vanishing gradient issues
+- Use in long sequence tasks
+
+Equations (reuse from earlier, add some explanation around them for 10-mark depth).
+
+---
+
+## 22. Explain Encoder–Decoder (Seq2Seq) Architecture with Example (10 marks)
+
+### 1. Overview (3 marks)
+
+Encoder–decoder (Seq2Seq) models handle tasks where **input and output are both sequences**, possibly of different lengths:
+- Machine translation
+- Summarization
+- Question answering
+
+Architecture:
+- Encoder RNN reads input sequence and encodes into context vector
+- Decoder RNN generates output sequence from context vector
+
+---
+
+### 2. Encoder (3 marks)
+
+Given input x₁,…,x_T:
+
+h_t = f(Wxh x_t + Whh h_{t−1})
+
+Final hidden state h_T used as **context vector c** containing condensed information about entire input.
+
+---
+
+### 3. Decoder (3 marks)
+
+Initial hidden state initialized with context vector c:
+
+s₀ = c
+
+At each output step t:
+
+s_t = f(Wys y_{t−1} + Wss s_{t−1})
+
+ŷ_t = Softmax(Wo s_t)
+
+During training, use **teacher forcing**: feed ground-truth previous token.  
+During inference, feed previous **predicted** token.
+
+---
+
+### 4. Example – Machine Translation (1 mark)
+
+English → French
+
+Input: "I love apples"  
+Output: "J’aime les pommes"
+
+Encoder reads English words, decoder generates French words one by one until `<EOS>`.
+
+Mention limitations of basic encoder–decoder (fixed context vector) and how **attention mechanism** improves performance.
+
+---
+
+## 23. Explain Backpropagation Through Time (BPTT) with Challenges (10 marks)
+
+Extend Section B Q40 with:
+- More explicit unrolled diagram
+- Detailed derivation of gradient flow
+- Emphasis on vanishing/exploding gradients
+- Practical truncation (TBPTT – truncated BPTT) used in real models
+
+---
+
+## 24. Explain Computer Vision, Speech Recognition, and NLP Using Deep Networks (10 marks)
+
+Structure answer as three sub-headings:
+
+1. **Computer Vision with CNNs:**
+   - Image classification (ResNet)
+   - Object detection (YOLO/Faster R-CNN)
+   - Semantic segmentation (U-Net)
+   - Brief architecture patterns
+
+2. **Speech Recognition with RNNs/CNNs/Transformers:**
+   - Acoustic feature extraction (MFCC)
+   - RNN/CTC models, now replaced by Transformers
+
+3. **NLP with RNNs and Transformers:**
+   - Word embeddings
+   - Seq2Seq, attention
+   - Transformer architecture (self-attention)
+
+Each part: 3–4 marks, plus 1–2 marks for linking and comparison.
+
+---
+
+## 25. Case Studies on Classification, Regression, and Deep Networks (10 marks)
+
+Prepare 3 brief case studies (approx 3 marks each) + 1 mark comparative insight:
+
+1. **Classification:**
+   - Example: Handwritten digit recognition with CNN (MNIST)
+   - Problem, architecture, training, results.
+
+2. **Regression:**
+   - Example: Predicting house prices using feedforward neural network
+   - Features, architecture, loss (MSE), evaluation (MAE/RMSE).
+
+3. **Deep Networks in practice:**
+   - Example: ImageNet-scale classification with ResNet
+   - Data, computation, training pipeline, transfer learning.
+
+Conclude with points about model selection, overfitting, evaluation, and deployment.
+
+---
+
+> This file completes **Section C** coverage at exam depth. Use together with `AI_Neural_Networks_Solutions.md` for full preparation of 5- and 10-mark questions.
